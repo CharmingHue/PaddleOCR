@@ -9,6 +9,6 @@ n 20.5.0
 hash -r
 npm install -g npm@10.3.0
 npm install -g commitizen
-npm install -g conventional-changelog
+npm install -g conventional-changelog-cli
 cd -
 commitizen init cz-conventional-changelog --save-dev --save-exact
