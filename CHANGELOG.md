@@ -5,6 +5,7 @@
 
 * **pretrain:** add shell file for loading pre-trained models ([87beeb8](https://github.com/CharmingHue/PaddleOCR/commit/87beeb8202ab9a6c464655f341544f9322110d76))
 * **setupcz.sh:** add setupcz.sh for installing commitizen ([b00efaf](https://github.com/CharmingHue/PaddleOCR/commit/b00efaf31ee03aa8c94548f51c9924e2ecc23acd))
+* **setupcz.sh:** add shell file for installing commitizen ([0530bd7](https://github.com/CharmingHue/PaddleOCR/commit/0530bd791a837bc51275cef54b6f5543ef1e9e35))
 
 
 ### Reverts
