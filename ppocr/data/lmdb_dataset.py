@@ -47,6 +47,9 @@ class LMDBDataSet(Dataset):
         ratio_list = dataset_config.get("ratio_list", [1.0])
         self.need_reset = True in [x < 1 for x in ratio_list]
 
+    '''
+    加载LMDB数据集。它遍历给定目录下的所有LMDB文件，并将它们存储在一个字典中。
+    '''
     def load_hierarchical_lmdb_dataset(self, data_dir):
         lmdb_sets = {}
         dataset_idx = 0
@@ -66,6 +69,9 @@ class LMDBDataSet(Dataset):
                 dataset_idx += 1
         return lmdb_sets
 
+    '''
+    创建一个索引列表，用于遍历数据集中的所有样本。
+    '''
     def dataset_traversal(self):
         lmdb_num = len(self.lmdb_sets)
         total_sample_num = 0
@@ -83,6 +89,9 @@ class LMDBDataSet(Dataset):
             beg_idx = beg_idx + tmp_sample_num
         return data_idx_order_list
 
+    '''
+    从LMDB中读取图像数据。
+    '''
     def get_img_data(self, value):
         """get_img_data"""
         if not value:
@@ -288,3 +297,15 @@ class LMDBDataSetTableMaster(LMDBDataSet):
 
     def __len__(self):
         return self.data_idx_order_list.shape[0]
+
+# if __name__ == "__main__":
+#     import logging
+#     import yaml
+#     from imaug import transform, create_operators
+
+#     logger = logging
+#     with open('configs/rec/rec_svtrnet_cppd_base_u14m.yml', 'r') as file:
+#         config = yaml.safe_load(file)
+
+#     dataset = LMDBDataSet(config, 'Eval', logger)
+#     dataset.__getitem__(100)
