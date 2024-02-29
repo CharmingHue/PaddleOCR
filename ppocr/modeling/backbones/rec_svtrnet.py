@@ -587,3 +587,10 @@ class SVTRNet(nn.Layer):
         if self.use_lenhead:
             return x, len_x
         return x
+
+if __name__ == "__main__":
+
+    svtr = SVTRNet()
+    input = paddle.randn([1, 3, 32, 100])
+    out = svtr(input)
+    print(out.shape)
