@@ -120,7 +120,7 @@ class EfficientAttention(nn.Layer):
   
         b, c, h, w = x.shape
         qkv = to_qkv(x) #(b (3 m d) h w)
-        qkv = mixer(qkv).reshape((b, 3, -1, h, w)).transpose(perm=[1, 0]).contiguous() #(3 b (m d) h w)
+        qkv = mixer(qkv).reshape((b, 3, -1, h, w)).transpose(perm=[1, 0, 2, 3, 4]) #(3 b (m d) h w)
         q, k, v = qkv #(b (m d) h w)
         attn = attn_block(q.multiply(k)).multiply(paddle.to_tensor(self.scalor))
         attn = self.attn_drop(paddle.tanh(attn))
@@ -134,14 +134,14 @@ class EfficientAttention(nn.Layer):
         
         b, c, h, w = x.shape
         
-        q = to_q(x).reshape((b, -1, self.dim_head, h*w)).transpose([0, 1, 3, 2]).contiguous() #(b m (h w) d)
+        q = to_q(x).reshape((b, -1, self.dim_head, h*w)).transpose([0, 1, 3, 2]) #(b m (h w) d)
         kv = avgpool(x) #(b c h w)
-        kv = to_kv(kv).reshape((b, 2, -1, self.dim_head, (h*w)//(self.window_size**2))).transpose([1, 0, 2, 4, 3]).contiguous() #(2 b m (H W) d)
+        kv = to_kv(kv).reshape((b, 2, -1, self.dim_head, (h*w)//(self.window_size**2))).transpose([1, 0, 2, 4, 3]) #(2 b m (H W) d)
         k, v = kv #(b m (H W) d)
         attn = self.scalor * q @ k.transpose([0, 1, 3, 2]) #(b m (h w) (H W))
-        attn = self.attn_drop(attn.softmax(dim=-1))
+        attn = self.attn_drop(nn.functional.softmax(attn))
         res = attn @ v #(b m (h w) d)
-        res = res.transpose([0, 1, 3, 2]).reshape(b, -1, h, w).contiguous()
+        res = res.transpose([0, 1, 3, 2]).reshape((b, -1, h, w))
         return res
 
     def forward(self, x: paddle.Tensor):
@@ -155,7 +155,7 @@ class EfficientAttention(nn.Layer):
             res.append(self.high_fre_attntion(x, self.qkvs[i], self.convs[i], self.act_blocks[i]))
         if self.group_split[-1] != 0:
             res.append(self.low_fre_attention(x, self.global_q, self.global_kv, self.avgpool))
-        return self.proj_drop(self.proj(paddle.cat(res, dim=1)))
+        return self.proj_drop(self.proj(paddle.concat(res, axis=1)))
 
 
 class ConvFFN(nn.Layer):
@@ -215,9 +215,7 @@ class EfficientBlock(nn.Layer):
         return x
 
 if __name__ == '__main__':
-    # input = paddle.randn((4, 96, 56, 56),dtype="float32")
-    # model = EfficientBlock(96, 192, 3, [1, 1, 1], [7, 5], 7, 7, 4, 2)
-    # print(model(input))
+    input = paddle.randn((4, 96, 56, 56),dtype="float32")
+    model = EfficientBlock(96, 192, 3, [1, 1, 1], [7, 5], 7, 7, 4, 2)
+    print(model(input).shape)
     
-    import paddle
-    paddle.utils.run_check()
