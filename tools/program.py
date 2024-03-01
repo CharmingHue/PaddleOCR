@@ -672,7 +672,7 @@ def preprocess(is_train=False):
         'SEED', 'SDMGR', 'LayoutXLM', 'LayoutLM', 'LayoutLMv2', 'PREN', 'FCE',
         'SVTR', 'SVTR_LCNet', 'ViTSTR', 'ABINet', 'DB++', 'TableMaster', 'SPIN',
         'VisionLAN', 'Gestalt', 'SLANet', 'RobustScanner', 'CT', 'RFL', 'DRRG',
-        'CAN', 'Telescope', 'SATRN', 'SVTR_HGNet', 'ParseQ', 'CPPD'
+        'CAN', 'Telescope', 'SATRN', 'SVTR_HGNet', 'ParseQ', 'CPPD', 'CloFormer'
     ]
 
     if use_xpu:

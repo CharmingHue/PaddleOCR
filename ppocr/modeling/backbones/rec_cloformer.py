@@ -172,13 +172,15 @@ class PatchEmbedding(nn.Layer):
 ##Swish激活函数  由之前的激活函数复合而成出来的   
 ##通过创建 PyLayer 子类的方式实现Python端自定义算子
 class SwishImplementation(PyLayer):
+    @staticmethod
     def forward(ctx, i):
         result = i * F.sigmoid(i)
         ctx.save_for_backward(i)
         return result
-
+    
+    @staticmethod
     def backward(ctx, grad_output):
-        i = ctx.saved_variables[0]
+        i = ctx.saved_tensor() [0]
         sigmoid_i = F.sigmoid(i)
         return grad_output * (sigmoid_i * (1 + i * (1 - sigmoid_i)))
 
@@ -530,8 +532,8 @@ class CloFormerNet(nn.Layer):
             x = self.pos_drop(x)
         for layer in self.layers:
             x = layer(x)           
-        if not self.prenorm:
-            x = self.norm(x)           
+        # if not self.prenorm:
+        #     x = self.norm(x)           
         return x
 
     def forward(self, x):
