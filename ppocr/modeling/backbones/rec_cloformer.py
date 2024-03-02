@@ -450,7 +450,7 @@ class CloFormerNet(nn.Layer):
                 out_char_num=25,
                 use_lenhead=False,
                 last_stage=True,
-                prenorm=True,
+                prenorm=False,
                 norm_layer='nn.LayerNorm',
                 epsilon=1e-6,
                 
@@ -458,6 +458,7 @@ class CloFormerNet(nn.Layer):
                  ):
         super().__init__()
         self.num_layers = len(depths)
+        self.embed_dims = embed_dims
         self.mlp_ratios = mlp_ratios
         self.patch_type = patch_type
         self.last_stage = last_stage
@@ -496,7 +497,7 @@ class CloFormerNet(nn.Layer):
         if last_stage:
             self.avg_pool = nn.AdaptiveAvgPool2D([1, out_char_num])
             self.last_conv = nn.Conv2D(
-                in_channels=embed_dims[3],
+                in_channels=embed_dims[-1],
                 out_channels=self.out_channels,
                 kernel_size=1,
                 stride=1,
@@ -507,7 +508,7 @@ class CloFormerNet(nn.Layer):
         if not prenorm:
             self.norm = eval(norm_layer)(embed_dims[-1], epsilon=epsilon)
         if use_lenhead:
-            self.len_conv = nn.Linear(embed_dims[3], self.out_channels)
+            self.len_conv = nn.Linear(embed_dims[-1], self.out_channels)
             self.hardswish_len = nn.Hardswish()
             self.dropout_len = nn.Dropout(
                 p=last_drop, mode="downscale_in_infer")
@@ -526,22 +527,29 @@ class CloFormerNet(nn.Layer):
         '''
         x: (b 3 h w)
         '''
+        b, c, h, w = x.shape
         x = self.patch_embed(x)
         if self.patch_type == "svtr":
             x = x + self.pos_embed
             x = self.pos_drop(x)
         for layer in self.layers:
-            x = layer(x)           
-        # if not self.prenorm:
-        #     x = self.norm(x)           
+            x = layer(x) 
+        x = x.transpose([0, 2, 3, 1]).reshape([b, -1, self.embed_dims[-1]])          
+        if not self.prenorm:
+            x = self.norm(x)           
         return x
 
     def forward(self, x):
+        b, c, h, w = x.shape
         x = self.forward_feature(x)
         if self.use_lenhead:
             len_x = self.len_conv(x.mean(1))
             len_x = self.dropout_len(self.hardswish_len(len_x))
+        print(x.shape)
         if self.last_stage:
+            x = self.avg_pool(
+                x.transpose([0, 2, 1]).reshape(
+                    [b, self.embed_dims[-1], h//(pow(2, (self.num_layers+1))), -1]))
             x = self.last_conv(x)
             x = self.hardswish(x)
             x = self.dropout(x)
@@ -553,7 +561,7 @@ class CloFormerNet(nn.Layer):
 '''
 if __name__ == "__main__":
     input = paddle.randn([1, 3, 32, 100])
-    model = CloFormerNet(patch_type='clo')
+    model = CloFormerNet(patch_type='svtr', last_stage=False, prenorm=True, use_lenhead=True)
     output = model(input)
     print(model)
-    print(output.shape)
+    print(output)
