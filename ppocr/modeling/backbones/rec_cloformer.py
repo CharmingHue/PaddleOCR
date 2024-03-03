@@ -54,7 +54,7 @@ class PatchEmbed(nn.Layer):
     """
 
     def __init__(self,
-                 img_size=[32, 100],
+                 img_size=[32, 128],
                  in_channels=3,
                  embed_dim=768,
                  sub_num=2,
@@ -423,22 +423,22 @@ class CloLayer(nn.Layer):
 '''
  
 '''
-#* >>>>>build CloFormerNet end<<<<<
+#* >>>>>build CloFormerNet start<<<<<
 '''    
 class CloFormerNet(nn.Layer):
 
     def __init__(
                 self,
-                img_size=[32, 100],
+                img_size=[32, 128],
                 in_chans=3,
-                embed_dims=[32, 64, 128, 256],
-                depths=[2, 2, 6, 2],
-                num_heads=[4, 4, 8, 16],
-                group_splits=[[3, 1], [2, 2], [4, 4], [4, 12]],
-                kernel_sizes=[[3], [5], [7], [9]],
-                window_sizes=[8, 4, 2, 1],
-                mlp_kernel_sizes=[5, 5, 5, 5],
-                mlp_ratios=[4, 4, 4, 4],
+                embed_dims=[128, 256, 384],
+                depths=[6, 6, 6],
+                num_heads=[4, 8, 12, ],
+                group_splits=[[3, 1], [4, 4], [4, 8], ],
+                kernel_sizes=[[3], [5], [7], ],
+                window_sizes=[4, 2, 1],
+                mlp_kernel_sizes=[5, 5, 5, ],
+                mlp_ratios=[4, 4, 4, ],
                 attn_drop=0.,
                 mlp_drop=0.,
                 last_drop=0.1,
@@ -545,7 +545,7 @@ class CloFormerNet(nn.Layer):
         if self.use_lenhead:
             len_x = self.len_conv(x.mean(1))
             len_x = self.dropout_len(self.hardswish_len(len_x))
-        print(x.shape)
+        # print(x.shape)
         if self.last_stage:
             x = self.avg_pool(
                 x.transpose([0, 2, 1]).reshape(
@@ -560,8 +560,8 @@ class CloFormerNet(nn.Layer):
 >>>>>build CloFormerNet end<<<<<
 '''
 if __name__ == "__main__":
-    input = paddle.randn([1, 3, 32, 100])
-    model = CloFormerNet(patch_type='svtr', last_stage=False, prenorm=True, use_lenhead=True)
+    input = paddle.randn([1, 3, 32, 128])
+    model = CloFormerNet(patch_type='svtr', last_stage=False, prenorm=True, use_lenhead=False)
     output = model(input)
     print(model)
-    print(output)
+    print(output.shape)

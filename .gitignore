@@ -37,3 +37,7 @@ pretrain/*
 node_modules/
 package-lock.json
 package.json
+
+best_model
+.lh
+.history
