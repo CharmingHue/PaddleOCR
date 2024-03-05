@@ -54,7 +54,7 @@ class PatchEmbed(nn.Layer):
     """
 
     def __init__(self,
-                 img_size=[32, 128],
+                 img_size=[32, 100],
                  in_channels=3,
                  embed_dim=768,
                  sub_num=2,
@@ -297,14 +297,14 @@ class EfficientAttention(nn.Layer):
         b, c, h, w = x.shape
         
         q = to_q(x).reshape((b, -1, self.dim_head, h*w)).transpose([0, 1, 3, 2]) #(b m (h w) d)
-        kv = avgpool(x) #(b c h w)
-        kv = to_kv(kv).reshape((b, 2, -1, self.dim_head, (h*w)//(self.window_size**2))).transpose([1, 0, 2, 4, 3]) #(2 b m (H W) d)
+        kv = avgpool(x) #(b c h w)  [160,128,2,6]
+        kv = to_kv(kv).reshape((b, 2, -1, self.dim_head, (h*w)//(self.window_size**2))).transpose([1, 0, 2, 4, 3]) #(2 b m (H W) d) [2, 160, 1, 12, 32]
         k, v = kv #(b m (H W) d)
         attn = self.scalor * q @ k.transpose([0, 1, 3, 2]) #(b m (h w) (H W))
         attn = self.attn_drop(nn.functional.softmax(attn))
         res = attn @ v #(b m (h w) d)
         res = res.transpose([0, 1, 3, 2]).reshape((b, -1, h, w))
-        return res
+        return res  #[160, 32, 8, 25]
 
     def forward(self, x: paddle.Tensor):
         '''
@@ -468,7 +468,7 @@ class CloFormerNet(nn.Layer):
         
         
         if self.patch_type == "svtr":
-            self.patch_embed = PatchEmbed(embed_dim=embed_dims[0])
+            self.patch_embed = PatchEmbed(embed_dim=embed_dims[0],img_size=img_size)
             self.pos_embed = self.create_parameter(shape=[1, embed_dims[0], img_size[0]//4, img_size[1]//4],
                                                    default_initializer=zeros_)
             self.add_parameter("pos_embed", self.pos_embed)
