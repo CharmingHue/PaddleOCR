@@ -41,7 +41,7 @@ Architecture:
   Transform:
   Backbone:
     name: CloFormerNet
-    img_size: [32, 128]
+    img_size: [32, 100]
     embed_dims: [128, 256, 384]
     depths: [6, 6, 6]
     num_heads: [4, 8, 12]
@@ -67,7 +67,7 @@ Architecture:
 
 Loss:
   name: CPPDLoss
-  ignore_index: &ignore_index 100 # must be greater than the number of character classes
+  ignore_index: &ignore_index 200 # must be greater than the number of character classes
   smoothing: True
   sideloss_weight: 1.0
 
@@ -89,13 +89,13 @@ Train:
       - CPPDLabelEncode: # Class handling label
           ignore_index: *ignore_index
       - SVTRRecResizeImg:
-          image_shape: [3, 32, 128]
+          image_shape: [3, 32, 100]
           padding: False
       - KeepKeys:
           keep_keys: ['image', 'label', 'label_node', 'length'] # dataloader will return list in this order
   loader:
     shuffle: True
-    batch_size_per_card: 320
+    batch_size_per_card: 160
     drop_last: True
     num_workers: 8
 
@@ -110,7 +110,7 @@ Eval:
       - CPPDLabelEncode: # Class handling label
           ignore_index: *ignore_index
       - SVTRRecResizeImg:
-          image_shape: [3, 32, 128]
+          image_shape: [3, 32, 100]
           padding: False
       - KeepKeys:
           keep_keys: ['image', 'label', 'label_node','length'] # dataloader will return list in this order
