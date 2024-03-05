@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(__dir__, '..')))
 
 import yaml
 import paddle
+import paddle.nn as nn
 import paddle.distributed as dist
 
 from ppocr.data import build_dataloader, set_signal_handlers
@@ -39,6 +40,13 @@ from ppocr.modeling.architectures import apply_to_static
 import tools.program as program
 
 dist.get_world_size()
+
+
+# m is the instance of nn.Layer, x is the intput of layer, y is the output of layer.
+def count_leaky_relu(m, x, y):
+    x = x[0]
+    nelements = x.numel()
+    m.total_ops += int(nelements)
 
 
 def main(config, device, logger, vdl_writer, seed):
@@ -135,6 +143,16 @@ def main(config, device, logger, vdl_writer, seed):
             config['Loss']['ignore_index'] = char_num - 1
 
     model = build_model(config['Architecture'])
+    h, w = config['Architecture']['Backbone']['img_size']
+    params_info = paddle.summary(model, (1, 3, h, w))
+    logger.info(params_info)
+    
+    FLOPs = paddle.flops(model,
+                     [1, 3, h, w],
+                     custom_ops= {nn.LeakyReLU: count_leaky_relu},
+                     print_detail=True)
+    logger.info(FLOPs)
+    
 
     use_sync_bn = config["Global"].get("use_sync_bn", False)
     if use_sync_bn:
