@@ -10,7 +10,7 @@ for dataset in "${datasets[@]}"
 do
 
     echo "Evaluating dataset ${dataset}..."
-    python tools/eval.py -c $config_path -o Global.pretrained_model=$model_path Eval.dataset.data_dir=train_data/test/${dataset}
+    python tools/eval.py -c $config_path -o Global.pretrained_model=$model_path Eval.dataset.data_dir=train_data/train_data/test/${dataset}
     # bash ./tools/eval_all.sh ./configs/rec/rec_cloformer_cppd.yml ./output/rec/cloformer_cppd_base/iter_epoch_6.pdparams
 done
 
