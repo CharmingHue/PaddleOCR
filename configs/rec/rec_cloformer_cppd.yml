@@ -8,18 +8,18 @@ Global:
   # evaluation is run every 2000 iterations after the 0th iteration
   eval_batch_step: [0, 2000]
   cal_metric_during_train: True
-  pretrained_model: ./best_model/model.pdparams
-  checkpoints:
-  save_inference_dir: ./output/rec/inference
+  pretrained_model: ./output/rec/rec_cloformer_cppd_base/best_accuracy.pdparams
+  checkpoints: ./output/rec/rec_cloformer_cppd_base/best_accuracy.pdparams
+  save_inference_dir: 
   use_visualdl: False
-  infer_img: doc/imgs_words_en/word_10.png
+  infer_img: ./train_data/common_benchmarks/SVTP/imgs/
   # for data or label process
   character_dict_path:
   character_type: en
   max_text_length: 25
   infer_mode: False
   use_space_char: False
-  save_res_path: ./output/rec/predicts_svtr_cloformer_base.txt
+  save_res_path: ./output/rec/rec_cloformer_cppd_base_SVTP.txt
 
 
 Optimizer:
@@ -41,11 +41,11 @@ Architecture:
   Transform:
   Backbone:
     name: CloFormerNet
-    img_size: [32, 100]
+    img_size: [32, 128]
     embed_dims: [128, 256, 384]
     depths: [6, 6, 6]
     num_heads: [4, 8, 12]
-    group_splits: [[3, 1], [4, 4], [4, 8]]
+    group_splits: [[2, 2], [4, 4], [6, 6]]
     kernel_sizes: [[3], [5], [7] ]
     window_sizes: [4, 2, 1]
     mlp_kernel_sizes: [5, 5, 5]
@@ -89,7 +89,7 @@ Train:
       - CPPDLabelEncode: # Class handling label
           ignore_index: *ignore_index
       - SVTRRecResizeImg:
-          image_shape: [3, 32, 100]
+          image_shape: [3, 32, 128]
           padding: False
       - KeepKeys:
           keep_keys: ['image', 'label', 'label_node', 'length'] # dataloader will return list in this order
@@ -110,7 +110,7 @@ Eval:
       - CPPDLabelEncode: # Class handling label
           ignore_index: *ignore_index
       - SVTRRecResizeImg:
-          image_shape: [3, 32, 100]
+          image_shape: [3, 32, 128]
           padding: False
       - KeepKeys:
           keep_keys: ['image', 'label', 'label_node','length'] # dataloader will return list in this order

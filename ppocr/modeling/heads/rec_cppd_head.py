@@ -27,6 +27,7 @@ from paddle import nn
 from paddle.nn import functional as F
 from ppocr.modeling.heads.rec_nrtr_head import Embeddings
 from ppocr.modeling.backbones.rec_svtrnet import DropPath, Identity, trunc_normal_, zeros_, ones_, Mlp
+from Visualizer.visualizer import get_local
 
 
 class Attention(nn.Layer):
@@ -48,18 +49,19 @@ class Attention(nn.Layer):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
+    @get_local('attn')
     def forward(self, q, kv):
-        N, C = kv.shape[1:]
-        QN = q.shape[1]
+        N, C = kv.shape[1:]     #[1, 64, 384]
+        QN = q.shape[1]         #[1, 64, 384]
         q = self.q(q).reshape(
             [-1, QN, self.num_heads, C // self.num_heads]).transpose(
-                [0, 2, 1, 3])
+                [0, 2, 1, 3])       #[1, 12, 64, 32]
         k, v = self.kv(kv).reshape(
             [-1, N, 2, self.num_heads, C // self.num_heads]).transpose(
-                (2, 0, 3, 1, 4))
+                (2, 0, 3, 1, 4))        #[1, 12, 64, 32]
         attn = q.matmul(k.transpose((0, 1, 3, 2))) * self.scale
         attn = F.softmax(attn, axis=-1)
-        attn = self.attn_drop(attn)
+        attn = self.attn_drop(attn) #attention map
         x = (attn.matmul(v)).transpose((0, 2, 1, 3)).reshape((-1, QN, C))
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -104,6 +106,7 @@ class EdgeDecoderLayer(nn.Layer):
                        act_layer=act_layer,
                        drop=drop)
 
+    @get_local('edge')
     def forward(self, p, cv, pv):
 
         pN = p.shape[1]
@@ -120,7 +123,7 @@ class EdgeDecoderLayer(nn.Layer):
             [-1, vN, self.num_heads, self.dim // self.num_heads]).transpose(
                 [0, 2, 1, 3])
 
-        edge = F.softmax(p1.matmul(pv1.transpose((0, 1, 3, 2))), -1)  # B h N N
+        edge = F.softmax(p1.matmul(pv1.transpose((0, 1, 3, 2))), -1)  # B h N N attention map
         p_c = (edge @cv1).transpose((0, 2, 1, 3)).reshape((-1, pN, self.dim))
 
         x1 = self.norm1(p_shortcut + self.drop_path1(self.p_proj(p_c)))
@@ -260,13 +263,13 @@ class CPPDHead(nn.Layer):
             return self.forward_test(x)
 
     def forward_test(self, x):
-        visual_feats = x + self.vis_pos_embed
+        visual_feats = x + self.vis_pos_embed   #[1, 64, 384]
         bs = visual_feats.shape[0]
         pos_node_embed = self.pos_node_embed(paddle.arange(
-            self.max_len)).unsqueeze(0) + self.char_pos_embed
-        pos_node_embed = paddle.tile(pos_node_embed, [bs, 1, 1])
-        char_vis_node_query = visual_feats
-        pos_vis_node_query = paddle.concat([pos_node_embed, visual_feats], 1)
+            self.max_len)).unsqueeze(0) + self.char_pos_embed       #[1, 26, 384]
+        pos_node_embed = paddle.tile(pos_node_embed, [bs, 1, 1])    #[1, 26, 384]
+        char_vis_node_query = visual_feats          #[1, 64, 384]
+        pos_vis_node_query = paddle.concat([pos_node_embed, visual_feats], 1)       #[1, 90, 384]
 
         for char_decoder_layer, pos_decoder_layer in zip(self.char_node_decoder,
                                                          self.pos_node_decoder):
